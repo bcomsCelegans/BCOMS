@@ -6,7 +6,7 @@ mkdir(waterStackTempDir);
 waterScoreTempDir = [membSegDir, '\ScoreTemp'];
 mkdir(waterScoreTempDir);
 
-% Å“K‰ğ
+% æœ€é©è§£
 waterStackDir = [membSegDir, '\Segmentation'];
 mkdir(waterStackDir);
 waterMembDir = [membSegDir, '\Membrane'];
@@ -14,7 +14,7 @@ mkdir(waterMembDir);
 waterScoreDir = [membSegDir, '\Score'];
 mkdir(waterScoreDir);
 
-%% ƒf[ƒ^€”õ
+%% ãƒ‡ãƒ¼ã‚¿æº–å‚™
 
 % {
 
@@ -29,12 +29,12 @@ nuc=double(nuc);
 embReg=oneStackLoad(embRegDir);
 embReg=double(logical(embReg));
 
-% ğŒ
+% æ¡ä»¶
 ratio=round(resZ/resXY);
 [~,~,zNum,tNum] = size(memb);
 
 
-%% ‘Oˆ—
+%% å‰å‡¦ç†
 oriEmbReg = embReg;
 embReg=imerode(embReg,ones(3, 3));
 % embReg = arrayfun(@(x) imerode(embReg(:,:,:,x), ones(15-2*x)), 1:length(tList), 'UniformOutput', false);
@@ -42,24 +42,24 @@ embReg=imerode(embReg,ones(3, 3));
 embReg(:,:,1,:) = embReg(:,:,1,:) * 0;
 embReg(:,:,end,:) = embReg(:,:,end,:) * 0;
 
-% ƒSƒ~œ‹
+% ã‚´ãƒŸé™¤å»
 embArea = sum(embReg(:)) / 10;
 embReg = bwareaopen(embReg, round(embArea*0.1),26);
 
-% ‹——£•ÏŠ·
+% è·é›¢å¤‰æ›
 dNuc = ratioDst( nuc, ratio, 3 );
 dNuc(isinf(dNuc))=1;
 dNuc=immultiply(double(dNuc),embReg);
 dNuc=mat2gray(dNuc);
 
-% memb‚ğave filtƒ‚±‚ê‚Ü‚Å‚Ì•û–@„
+% membã‚’ave filtï¼œã“ã‚Œã¾ã§ã®æ–¹æ³•ï¼
 % {
 filtSize=[1 3 5];
 % h=ones(filtSize)/prod(filtSize);
 % membDenoise=imfilter(memb,h,'replicate');
 %}
 
-%% ğŒ‚ğU‚Á‚Äwatershed‚ÌÀs
+%% æ¡ä»¶ã‚’æŒ¯ã£ã¦watershedã®å®Ÿè¡Œ
 alphas=0:0.005:0.04;
 % alphas=0:0.1:0.4;
 % alphas=0:4;
@@ -86,40 +86,40 @@ parfor si = 1:length(filtSize)
 
         range = getrangefromclass(stack);
 
-        % ¬‚³‚¢EmbReg‚Å1st trial
+        % å°ã•ã„EmbRegã§1st trial
         stack(~embReg)=range(2);
 
-        % ×–EŠj—Ìˆæ‚ğÅ¬’l‚É‚·‚é
+        % ç´°èƒæ ¸é ˜åŸŸã‚’æœ€å°å€¤ã«ã™ã‚‹
         stack=imimposemin(stack,logical(nuc),26);
 
         stack=watershed(stack,26);
         stack=immultiply(double(stack),embReg);
 
-        % ID‚ğŠj‚ÌID‚É‡‚í‚¹‚éBƒGƒbƒW—Ìˆæ‚Æd‚È‚Á‚Ä‚¢‚éŠj‚ª‚ ‚é‚Ì‚Å‚O‚Æ‚ÌƒyƒA‚Í–³‹‚·‚é
+        % IDã‚’æ ¸ã®IDã«åˆã‚ã›ã‚‹ã€‚ã‚¨ãƒƒã‚¸é ˜åŸŸã¨é‡ãªã£ã¦ã„ã‚‹æ ¸ãŒã‚ã‚‹ã®ã§ï¼ã¨ã®ãƒšã‚¢ã¯ç„¡è¦–ã™ã‚‹
         conv = unique([stack(nuc>0) nuc(nuc>0)], 'rows');
         zeroLines = any(conv==0, 2);
         conv = conv(~zeroLines, :);
         stack=tikan(stack, conv(:,1), conv(:,2));
 
         membStack = logical(imdilate(logical(stack),ones(3,3,3)) - logical(stack));
-        membOver=immultiply(membDenoise, membStack);%˜_•¶—p
-%         membRevOver=immultiply(membDenoise, ~membStack);%˜_•¶—p
+        membOver=immultiply(membDenoise, membStack);%è«–æ–‡ç”¨
+%         membRevOver=immultiply(membDenoise, ~membStack);%è«–æ–‡ç”¨
 
-        % ‹P“x’l‚ª‚O‚Å‚È‚¢ƒsƒNƒZƒ‹‚Ì•½‹Ï’l
+        % è¼åº¦å€¤ãŒï¼ã§ãªã„ãƒ”ã‚¯ã‚»ãƒ«ã®å¹³å‡å€¤
         membOverMean = arrayfun(@(x) mean(nonzeros(membOver(:,:,:,x))), 1:size(membOver, 4));
 %         memRevbOverMean = arrayfun(@(x) mean(nonzeros(membRevOver(:,:,:,x))), 1:size(membRevOver, 4));
         
         % s/n
 %         membOverSN = membOverMean./memRevbOverMean;
 
-        % ‘Î‰‚·‚é×–EŠj‚ªŒ©‚Â‚©‚ç‚È‚©‚Á‚½×–E‚Ì”‚ğŠeƒ^ƒCƒ€ƒ|ƒCƒ“ƒg‚ÅŒvZ
+        % å¯¾å¿œã™ã‚‹ç´°èƒæ ¸ãŒè¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸç´°èƒã®æ•°ã‚’å„ã‚¿ã‚¤ãƒ ãƒã‚¤ãƒ³ãƒˆã§è¨ˆç®—
         missedNum = arrayfun(@(x) length(setdiff(unique(nonzeros(nuc(:,:,:,x))), unique(nonzeros(stack(:,:,:,x))))), 1:tNum);
 
-        % Še×–E‘ÌÏ‚ÌÅ‘å‚ÆÅ¬‚Ì”ä—¦
+        % å„ç´°èƒä½“ç©ã®æœ€å¤§ã¨æœ€å°ã®æ¯”ç‡
         uniColors = unique(nonzeros(stack));
         vol = arrayfun(@(x) squeeze(sum(sum(sum(stack==x, 1), 2), 3)), uniColors, 'UniformOutput', false);
         vol = cat(2, vol{:});
-        vol = vol';%s‚ª×–E–¼, —ñ‚ªŠÔ
+        vol = vol';%è¡ŒãŒç´°èƒå, åˆ—ãŒæ™‚é–“
         vol(vol == 0) = NaN;
 
         volRatioAtTime = nanmin(vol) ./ nanmax(vol);
@@ -128,7 +128,7 @@ parfor si = 1:length(filtSize)
         score =  [(1:tNum)', repmat(sz, [length(membOverMean) 1]), repmat(alpha, [length(membOverMean) 1]), membOverMean', missedNum' volRatioAtTime'];
 %         score =  [(1:tNum)', repmat(sz, [length(membOverSN) 1]), repmat(alpha, [length(membOverSN) 1]), membOverSN', missedNum' volRatioAtTime'];
 
-        % •Û‘¶
+        % ä¿å­˜
         filename = [waterStackTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
         parsaveStack(filename, stack);
         filename = [waterScoreTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
@@ -165,7 +165,10 @@ for sz=filtSize
 %         stack = cat(3, stack, thisStack(:,:,20,4));
     end
 end
-stack = randomizeId(stack);
+try
+    stack = randomizeId(stack);
+catch
+end
 % visualize4Dsc(stack);
 memb = [];
 for sz=filtSize
@@ -180,16 +183,16 @@ for sz=filtSize
 end
 stack = stack + (max(stack(:) + 1)) * logical(memb);
 
-%% S‘©ğŒ‚Ì“K—p
+%% æ‹˜æŸæ¡ä»¶ã®é©ç”¨
 % {
-% missed ×–E”
+% missed ç´°èƒæ•°
 numMissedThre = 0;
 score = score(score(:,4) == numMissedThre,:);
 
 %}
 
-%% –Ú“IŠÖ”‚Ì•]‰¿
-% Å“Kƒ¿‚ğŒvZ
+%% ç›®çš„é–¢æ•°ã®è©•ä¾¡
+% æœ€é©Î±ã‚’è¨ˆç®—
 score = sortrows(score, 3);
 minSz = score(end,1);
 minAlpha = score(end,2);
@@ -203,7 +206,7 @@ stack = oneStackLoad(filename);
 
 
 
-%% •Û‘¶
+%% ä¿å­˜
 stack = randomizeId(stack);
 stackWrite(stack, waterStackDir);
 
