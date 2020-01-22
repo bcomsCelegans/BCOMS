@@ -72,12 +72,16 @@ membNorm = membNorm / max(membNorm(:));
 % ê≥ãKâªZ
 means = arrayfun(@(x) mean(reshape(memb(:,:,x,:), [r*c*tNum, 1])), 1:size(memb,3));
 means = means / mean(means);
+means(means==0) = 0.0001;
 memb = arrayfun(@(x) memb(:,:,x,:) / means(x), 1:size(memb,3), 'UniformOutput', false);
 memb = cat(3, memb{:});
 memb = memb / max(memb(:));
 
 vars = arrayfun(@(x) var(reshape(memb(:,:,:,x), [r*c*zNum, 1])), 1:size(memb,4));
 vars = vars / mean(vars);
+if isnan(vars)
+    vars = 1;
+end
 
 % {
 
