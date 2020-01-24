@@ -2,10 +2,6 @@ function embryonicRegion(membImg, nucValDir, embRegDir, volRatioThresh)
 
 mkdir(embRegDir);
 
-embRegEvalTempDir=[embRegDir, '\EvalTemp'];
-mkdir(embRegEvalTempDir);
-embRegParamTempDir=[embRegDir, '\ParamTemp'];
-mkdir(embRegParamTempDir);
 embRegStackTempDir=[embRegDir, '\StackTemp'];
 mkdir(embRegStackTempDir);
 embRegStackDir=[embRegDir, '\Stack'];
@@ -104,184 +100,130 @@ if addNum > 0
 end
 tListMod = reshape(tListMod, [rowNumT colNumT]);
 
-param.sigma=[0 1.5 3];
-param.smooth=0.5;
-param.contBiasFactorA=[0.005: 0.005 0.03];
-param.contBiasFactorB=1:3:5;
-param.repeatFactor=50:50:300;
-
-% param.sigma=[1.5];
-% param.smooth=0.5;
-% param.contBiasFactorA=[0.3];
-% param.contBiasFactorB=[3];
-% param.repeatFactor=[1000];
-
-eval = []; eval.vol = []; eval.nucRejected = []; eval.objective = [];
+% Parameters
+smooth=0.5;
+contBiasFactorA = [0.03 0.05:0.05:0.2];%default
+contBiasFactorB=[4 6 8 10 12];%default
+repeatFactor=100;%default
+% repeatFactor=50;%50の時
+erdSz = [1 3 5];
+% repeatFactor=50;%50
+% Score
+score = {};
+paramLength = length(contBiasFactorA) * length(contBiasFactorB) * length(repeatFactor);
 % {
-for rn=1:rowNumT
-    thisT = tListMod(rn,:);
-    param = structfun(@(x) unique(x), param, 'UniformOutput', false);
-    % {
-    parfor i = 1:length(thisT)
-%     for i = 1:length(thisT)
-        t = thisT(i);
-        if t==0
-            continue
-        end
-        
-        thisMemb = memb(:,:,:,t);
-        thisNuc = nuc(:,:,:,t);
-        thisIniReg = iniReg(:,:,:,t);
-        thisMembNorm = membNorm(:,:,:,t);
-        thisIni = reshape(thisIniReg, [r, c*zNum]);
-        thisNormImgSlice = reshape(thisMembNorm, [r, c*zNum]);
-        tempScore = [];
-        
-        % 初期化
-        evalTemp = []; evalTemp.vol = []; evalTemp.nucRejected = []; evalTemp.objective = [];
-        paramTemp = []; paramTemp.sigma = []; paramTemp.smooth = []; paramTemp.contBiasFactorA = []; paramTemp.contBiasFactorB = []; paramTemp.repeatFactor = [];
-        
-        for sigma=param.sigma
-            if sigma~=0
-                gausImg=imgaussfilt(thisMemb, sigma);
-            else
-                gausImg=thisMemb;
-            end
-            for sm = param.smooth
-                for ca = param.contBiasFactorA
-                    for cb = param.contBiasFactorB
-                        contBias = ca * vars(t).^cb;
-                        for rf = param.repeatFactor
-                            thisImg = reshape(gausImg, [r, c*zNum]);
-                            membReg=activecontour(thisImg, thisIni,rf,'Chan-Vese' ,'SmoothFactor',sm, 'ContractionBias',contBias);
-
-                            % eval
-                            [ overVal, vol, nucCoveredFlag ] = evalEmbryonicRegion( membReg, thisNormImgSlice, thisNuc );
-
-                            % constraintsの評価
-                            evalTemp.vol = [evalTemp.vol vol];
-                            evalTemp.nucRejected = [evalTemp.nucRejected ~nucCoveredFlag];
-
-                            % objective functionの評価
-                            evalTemp.objective = [evalTemp.objective overVal];
-
-                            % segmentation result
-                            paramTemp.sigma = [paramTemp.sigma sigma];
-                            paramTemp.smooth = [paramTemp.smooth sm];
-                            paramTemp.contBiasFactorA = [paramTemp.contBiasFactorA ca];
-                            paramTemp.contBiasFactorB = [paramTemp.contBiasFactorB cb];
-                            paramTemp.repeatFactor = [paramTemp.repeatFactor rf];
-                        end
+% 各Tで計算
+parfor t=1:tNum
+% for t=1:tNum
+    thisMemb = memb(:,:,:,t);
+    % Gaussian filter
+    thisMemb=imgaussfilt3(thisMemb, 1);
+    tempScore = zeros(paramLength, 8);
+    repeatFactorUpdated = repeatFactor;
+    thisMembNorm = membNorm(:,:,:,t);
+    thisNucErd = nuc(:,:,:,t);
+    i = 0;
+    for ca=contBiasFactorA
+        for cb=contBiasFactorB
+            contBias = ca * vars(t).^cb;
+            for rf = repeatFactorUpdated
+                membReg = zeros(r,c,zNum);
+%                 parfor z = 1:zNum
+                for z = 1:zNum
+                    thisMemb2D = thisMemb(:,:,z);
+                    thisIniReg2D = iniReg(:,:,z,t);
+                    thisMean = mean(thisMemb2D(:));
+                    thisStd = std(thisMemb2D(:));
+                    thisCC = thisStd / thisMean;
+                    thisSmooth = smooth / thisCC^2;
+                    thisContBias = contBias / thisCC^2;
+                    thisRf = round(rf * thisCC);
+                    % Level set
+                    membReg2D=activecontour(thisMemb2D, thisIniReg2D,thisRf,'Chan-Vese' ,'SmoothFactor',thisSmooth, 'ContractionBias',thisContBias);
+                    membReg(:,:,z) = membReg2D;
+                end
+                for er = erdSz
+                    i = i + 1;
+                    membReg = imerode(membReg, ones(er, er));
+                    % 細胞膜として認識された領域のmembチャネルでの輝度値（高いほうが一致している）
+                    peri = bwperim(logical(membReg), 8);
+                    if max(peri(:)) == 0
+                        overVal = 0;
+                    else
+                        embRegOver=immultiply(thisMembNorm, peri);%評価するときはオリジナル画像
+                        overVal = mean(nonzeros(embRegOver));
                     end
+                    % 体積
+                    vol = sum(membReg(:));
+                    % 全細胞核が胚領域に含まれていれば１
+                    membReg = reshape(membReg, r, c, zNum);
+                    nucOver = immultiply(thisNucErd, ~membReg);
+                    if max(nucOver(:)) == 1
+                        nucCoveredFlag = 0;
+                    else
+                        nucCoveredFlag = 1;
+                    end
+
+                    % Score
+                    tempScore(i, :) = [t ca cb rf er overVal vol nucCoveredFlag];
+                    % save
+                    filename = [embRegStackTempDir, '\T', num2str(t), 'CA', num2str(ca), 'CB', num2str(cb), 'RF', num2str(rf), 'ER', num2str(er), '.mat'];
+                    parsaveStack(filename, membReg);
                 end
             end
         end
-        filename = [embRegEvalTempDir, '\T', num2str(t), '.mat'];
-        parsaveStack(filename, evalTemp);
-        filename = [embRegParamTempDir, '\T', num2str(t), '.mat'];
-        parsaveStack(filename, paramTemp);
-    end
-    %}
-    % evalをまとめる
-    for t = thisT
-%         t
-        if t==0
-            continue
-        end
-        filename = [embRegEvalTempDir, '\T', num2str(t), '.mat'];
-        evalTemp = oneStackLoad(filename);
-        filename = [embRegParamTempDir, '\T', num2str(t), '.mat'];
-        param = oneStackLoad(filename);
-
-        % Nucelar enclosure
-        eval.nucRejected(t,:) = evalTemp.nucRejected;
-
-        % volume ratio
-        eval.vol(t,:) = evalTemp.vol;
-
-        % objective
-        eval.objective(t,:) = evalTemp.objective;
-    end
-
-    % constraintsの評価
-    nucRejected = logical(sum(eval.nucRejected));
-    
-    volMin = min(eval.vol);
-    volMax = max(eval.vol);
-    volRatio = volMin ./ volMax;
-    volRejected = volRatio < volRatioThresh;
-    
-    rejected = logical(nucRejected  + volRejected);
-    
-    % temp
-    rejected = rejected*0;
-    
-    % paramの更新
-    param = structfun(@(x) x(:, ~rejected), param, 'UniformOutput', false);
-    eval = structfun(@(x) x(:, ~rejected), eval, 'UniformOutput', false);
-    
-    % 各パラメータ、すべての値でrejectされた場合
-    emptyFlag = structfun(@(x) isempty(x), param);
-    if any(emptyFlag)
-        errordlg('No segmentation was acquired in the parameter space');
+        score{t} = tempScore;
     end
 end
-%}
 
-% 最適解の探索
-meanObj = mean(eval.objective, 1);
-[~, maxCol] = max(meanObj);
-optParam = structfun(@(x) x(maxCol), param, 'UniformOutput', false);
 
-% 最適解で再計算
-for rn=1:rowNumT
-    thisT = tListMod(rn,:);
-    parfor i = 1:length(thisT)
-%     for i = 1:length(thisT)
-        t = thisT(i);
-        if t==0
-            continue
-        end
-        
-        thisMemb = memb(:,:,:,t);
-        thisIniReg = iniReg(:,:,:,t);
-        thisIni = reshape(thisIniReg, [r, c*zNum]);
+%% 最適パラメータの抽出
+% {
+% 全タイムポイントで平均する
+scoreStack = cat(3, score{:});
+meanScore = mean(scoreStack, 3);
+minScore = min(scoreStack, [], 3);
+maxScore = max(scoreStack, [], 3);
+ratioScore = minScore ./ maxScore;
 
-        for sigma=optParam.sigma
-            if sigma~=0
-                gausImg=imgaussfilt(thisMemb, sigma);
-            else
-                gausImg=thisMemb;
-            end
-            for sm = optParam.smooth
-                for ca = optParam.contBiasFactorA
-                    for cb = optParam.contBiasFactorB
-                        contBias = ca * vars(t).^cb;
-                        for rf = optParam.repeatFactor
-                            thisImg = reshape(gausImg, [r, c*zNum]);
-                            membRegOpt=activecontour(thisImg, thisIni,rf,'Chan-Vese' ,'SmoothFactor',sm, 'ContractionBias',contBias);
-                        end
-                    end
-                end
-            end
-        end
-        membRegOpt = reshape(membRegOpt, [r, c, zNum]);
-        filename = [embRegStackTempDir, '\T', num2str(t), '.mat'];
-        parsaveStack(filename, membRegOpt);
-    end
-    embReg = zeros(size(memb));
-    for t = thisT
-        if t==0
-            continue
-        end
-        filename = [embRegStackTempDir, '\T', num2str(t), '.mat'];
-        stackTemp = oneStackLoad(filename);
-        embReg(:,:,:,t) = stackTemp;
-    end
+% {
+% 拘束条件の適用
+% 体積一致率
+volRatioCol = 7;
+% volRatioThresh = 0.93;
+meanScore = meanScore(ratioScore(:,volRatioCol) >= volRatioThresh,:);
+
+% 目的関数の値で並べ替え
+objCol = 6;
+meanScore = sortrows(meanScore, objCol, 'descend' );
+
+% 条件を満たす結果がない場合は終了
+if isempty(meanScore)
+    embRegFlag = 0;
+    filename = [embRegFlagDir, '\stack.mat'];
+    parsaveStack(filename, embRegFlag);
+    return
+else
+    embRegFlag = 1;
+end
+
+%% 最適パラメータで再計算
+% Parameters
+caOpt=meanScore(1,2);
+cbOpt=meanScore(1,3);
+rfOpt=meanScore(1,4);
+optEr=meanScore(1,5);
+
+embOpt = zeros(r,c,zNum, tNum);
+for t = 1:tNum
+    filename = [embRegStackTempDir, '\T', num2str(t), 'CA', num2str(caOpt), 'CB', num2str(cbOpt), 'RF', num2str(rfOpt), 'ER', num2str(optEr), '.mat'];
+    embOpt(:,:,:,t) = oneStackLoad(filename);
 end
 
 
 % 保存
 filename = [embRegStackDir, '\embrayonicRegion.mat'];
-parsaveStack(filename, embReg);
+parsaveStack(filename, embOpt);
+
+rmdir(embRegStackTempDir, 's')
 

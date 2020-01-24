@@ -9,12 +9,8 @@ mkdir(waterScoreTempDir);
 % ç≈ìKâ
 waterStackDir = [membSegDir, '\Cell'];
 mkdir(waterStackDir);
-waterLabelDir = [membSegDir, '\CellLabel'];
-mkdir(waterLabelDir);
 waterMembDir = [membSegDir, '\Membrane'];
 mkdir(waterMembDir);
-matStackDir = [membSegDir, '\MatFile'];
-mkdir(matStackDir);
 % waterScoreDir = [membSegDir, '\Score'];
 % mkdir(waterScoreDir);
 
@@ -205,16 +201,9 @@ stack = oneStackLoad(filename);
 rmdir(waterStackTempDir, 's');
 rmdir(waterScoreTempDir, 's');
 
-stack = bwconncomp(stack, 26);
-stack = labelmatrix(stack);
-
 %% ï€ë∂
 % stack = randomizeId(stack);
-stackWrite(stack, waterLabelDir);
-stackWrite(logical(stack), waterStackDir);
-
-filename = [matStackDir, '\cell.mat'];
-parsaveStack(filename, stack)
+stackWrite(stack, waterStackDir);
 
 % stackWrite(memb, waterMembDir);
 
