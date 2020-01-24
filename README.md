@@ -1,2 +1,0 @@
-# BCOMS
-BCOMS program
