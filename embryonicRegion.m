@@ -199,12 +199,8 @@ meanScore = sortrows(meanScore, objCol, 'descend' );
 
 % 条件を満たす結果がない場合は終了
 if isempty(meanScore)
-    embRegFlag = 0;
-    filename = [embRegFlagDir, '\stack.mat'];
-    parsaveStack(filename, embRegFlag);
+    h = msgbox('No segmentation result satisfied the volume ratio constraint');
     return
-else
-    embRegFlag = 1;
 end
 
 %% 最適パラメータで再計算
