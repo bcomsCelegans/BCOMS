@@ -198,11 +198,12 @@ end
 % extractImg( 'MyCele', handles.memraneFilename, handles.nucleusFilename, 1, handles.numT, handles.numZ, handles.resultDir, 1 );
 % delete(h);
 
-h = msgbox('Reading image files');
+h = waitbar(0.1, 'Reading image files');
 handles.membImgDir = [handles.resultDir, '\MembraneImage'];
 handles.nucImgDir = [handles.resultDir, '\NuclearImage'];
 
 tifRead(handles.memraneFilename, handles.numZ, handles.numT, handles.membImgDir)
+waitbar(0.5, h);
 tifRead(handles.nucleusFilename, handles.numZ, handles.numT, handles.nucImgDir)
 
 handles.flagRoiExtract = 1;
@@ -225,10 +226,10 @@ handles.nucSegROIDir = [handles.resultDir, '\Nucleus\ImgRoi'];
 handles.roiExtractedDir = [handles.resultDir, '\ROI\Extracted'];
 handles.embRegDir = [handles.resultDir, '\EmbReg'];
 
-h = msgbox('Computing embryonic region');
+h = waitbar(0.1, 'Computing embryonic region');
 ME = 0;
 try
-    embryonicRegion(handles.membImgDir, handles.nucImgDir, handles.embRegDir, handles.volRatioThresh);
+    h = embryonicRegion(handles.membImgDir, handles.nucImgDir, handles.embRegDir, handles.volRatioThresh, h);
 catch ME
     delete(h);
     rethrow(ME)
@@ -270,10 +271,10 @@ end
 handles.membSegDir = [handles.resultDir, '\MembraneSegmentation'];
 handles.embRegStackDir = [handles.resultDir, '\EmbReg\Stack'];
 
-h = msgbox('Computing membrane segmentation');
+h = waitbar(0.1, 'Computing membrane segmentation');
 ME = 0;
 try
-    waterMembrane( handles.membImgDir, handles.nucImgDir, handles.embRegStackDir, handles.membSegDir, handles.resXY, handles.resZ );
+    h = waterMembrane( handles.membImgDir, handles.nucImgDir, handles.embRegStackDir, handles.membSegDir, handles.resXY, handles.resZ, h );
 %     simpleWater( handles.membImgDir, handles.nucImgDir, handles.embRegStackDir, handles.membSegDir, handles.resXY, handles.resZ );
 catch ME
     delete(h);

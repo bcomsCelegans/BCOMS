@@ -1,4 +1,4 @@
-function waterMembrane( membImgDir, nucValDir, embRegDir, membSegDir, resXY, resZ )
+function h = waterMembrane( membImgDir, nucValDir, embRegDir, membSegDir, resXY, resZ, h )
 
 % Temp
 waterStackTempDir = [membSegDir, '\SegmentationTemp'];
@@ -17,6 +17,9 @@ matStackDir = [membSegDir, '\MatFile'];
 mkdir(matStackDir);
 % waterScoreDir = [membSegDir, '\Score'];
 % mkdir(waterScoreDir);
+
+% waitbar
+waitbar(0.2, h);
 
 %% データ準備
 
@@ -63,6 +66,9 @@ filtSize=[1 3 5];
 % membDenoise=imfilter(memb,h,'replicate');
 %}
 
+% waitbar
+waitbar(0.3, h);
+
 %% 条件を振ってwatershedの実行
 alphas=0:0.005:0.04;
 % alphas=0:0.1:0.4;
@@ -76,8 +82,8 @@ parfor si = 1:length(filtSize)
 % for si = 1:length(filtSize)
     sz = filtSize(si);
     fs = [sz sz sz];
-    h=ones(fs)/prod(fs);
-    membDenoise=imfilter(memb,h,'replicate');
+    hs=ones(fs)/prod(fs);
+    membDenoise=imfilter(memb,hs,'replicate');
     for a=1:length(alphas)
     %     a = 2
         stack=membDenoise;
@@ -141,6 +147,8 @@ parfor si = 1:length(filtSize)
 end
 %}
 
+% waitbar
+waitbar(0.8, h);
 
 score = [];
 for sz=filtSize
@@ -207,6 +215,9 @@ rmdir(waterScoreTempDir, 's');
 
 stack = bwconncomp(stack, 26);
 stack = labelmatrix(stack);
+
+% waitbar
+waitbar(0.9, h);
 
 %% 保存
 % stack = randomizeId(stack);

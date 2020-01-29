@@ -1,4 +1,4 @@
-function embryonicRegion(membImg, nucValDir, embRegDir, volRatioThresh)
+function h = embryonicRegion(membImg, nucValDir, embRegDir, volRatioThresh, h)
 
 mkdir(embRegDir);
 
@@ -100,6 +100,10 @@ if addNum > 0
 end
 tListMod = reshape(tListMod, [rowNumT colNumT]);
 
+
+% waitbar
+waitbar(0.2, h);
+
 % Parameters
 smooth=0.5;
 contBiasFactorA = [0.03 0.05:0.05:0.2];%default
@@ -177,6 +181,9 @@ parfor t=1:tNum
 end
 
 
+% waitbar
+waitbar(0.8, h);
+
 %% 最適パラメータの抽出
 % {
 % 全タイムポイントで平均する
@@ -216,6 +223,9 @@ for t = 1:tNum
     embOpt(:,:,:,t) = oneStackLoad(filename);
 end
 
+
+% waitbar
+waitbar(0.9, h);
 
 % 保存
 filename = [embRegStackDir, '\embrayonicRegion.mat'];
