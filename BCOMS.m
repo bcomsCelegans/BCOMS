@@ -56,7 +56,7 @@ function BCOMS_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.flagRoiExtract = 0;
 handles.flagEmbReg = 0;
 handles.flagMemb = 0;
-handles.memraneDir = './';
+handles.membraneDir = './';
 
 % Choose default command line output for BCOMS
 handles.output = hObject;
@@ -82,21 +82,21 @@ varargout{1} = handles.output;
 % pushbutton
 function pushbutton5_Callback(hObject, eventdata, handles)
 [fileName, pathName] = uigetfile('*','Select membrane image file');
-handles.memraneDir = pathName;
+handles.membraneDir = pathName;
 handles.memraneFilename = [pathName, fileName];
 if handles.memraneFilename == 0; return; end
 set(handles.edit1, 'String', num2str(handles.memraneFilename));
 guidata(hObject, handles);
 
 function pushbutton6_Callback(hObject, eventdata, handles)
-[fileName, pathName] = uigetfile('*','Select nuclear segmentation file', handles.memraneDir);
+[fileName, pathName] = uigetfile('*','Select nuclear segmentation file', handles.membraneDir);
 handles.nucleusFilename = [pathName, fileName];
 if handles.nucleusFilename == 0; return; end
 set(handles.edit2, 'String', num2str(handles.nucleusFilename));
 guidata(hObject, handles);
 
 function pushbutton7_Callback(hObject, eventdata, handles)
-handles.resultDir = uigetdir(handles.memraneDir,'Select results directory');
+handles.resultDir = uigetdir(handles.membraneDir,'Select results directory');
 if handles.resultDir == 0; return; end
 set(handles.edit3, 'String', num2str(handles.resultDir));
 guidata(hObject, handles);
@@ -190,17 +190,9 @@ if ~isfield(handles, 'resXY') || ~isfield(handles, 'resZ') || ~isfield(handles, 
     return
 end
 
-% handles.ROIDir = [handles.resultDir, '\ROI'];
-
-% roiSelect( 'MyCele', handles.memraneFilename, [], handles.ROIDir, 1, handles.numT, handles.numZ, 1 );
-
-% h = msgbox('Extracting ROI region');
-% extractImg( 'MyCele', handles.memraneFilename, handles.nucleusFilename, 1, handles.numT, handles.numZ, handles.resultDir, 1 );
-% delete(h);
-
 h = waitbar(0.1, 'Reading image files');
-handles.membImgDir = [handles.resultDir, '\MembraneImage'];
-handles.nucImgDir = [handles.resultDir, '\NuclearImage'];
+handles.membImgDir = [handles.resultDir, filesep, 'MembraneImage'];
+handles.nucImgDir = [handles.resultDir, filesep, 'NuclearImage'];
 
 tifRead(handles.memraneFilename, handles.numZ, handles.numT, handles.membImgDir)
 waitbar(0.5, h);
@@ -221,10 +213,10 @@ if handles.flagRoiExtract == 0
     return
 end
 
-handles.membImgROIDir = [handles.resultDir, '\Membrane\ImgRoi'];
-handles.nucSegROIDir = [handles.resultDir, '\Nucleus\ImgRoi'];
-handles.roiExtractedDir = [handles.resultDir, '\ROI\Extracted'];
-handles.embRegDir = [handles.resultDir, '\EmbReg'];
+handles.membImgROIDir = [handles.resultDir, filesep, 'Membrane', filesep, 'ImgRoi'];
+handles.nucSegROIDir = [handles.resultDir, filesep, 'Nucleus', filesep, 'ImgRoi'];
+handles.roiExtractedDir = [handles.resultDir, filesep, 'ROI', filesep, 'Extracted'];
+handles.embRegDir = [handles.resultDir, filesep, 'EmbReg'];
 
 h = waitbar(0.1, 'Computing embryonic region');
 ME = 0;
@@ -232,6 +224,7 @@ try
     h = embryonicRegion(handles.membImgDir, handles.nucImgDir, handles.embRegDir, handles.volRatioThresh, h);
 catch ME
     delete(h);
+    h = errordlg([ME.identifier, newline, ME.message]);
     rethrow(ME)
 end
 delete(h);
@@ -268,8 +261,8 @@ if handles.flagEmbReg == 0
     return
 end
 
-handles.membSegDir = [handles.resultDir, '\MembraneSegmentation'];
-handles.embRegStackDir = [handles.resultDir, '\EmbReg\Stack'];
+handles.membSegDir = [handles.resultDir, filesep, 'MembraneSegmentation'];
+handles.embRegStackDir = [handles.resultDir, filesep, 'EmbReg', filesep, 'Stack'];
 
 h = waitbar(0.1, 'Computing membrane segmentation');
 ME = 0;
@@ -278,7 +271,7 @@ try
 %     simpleWater( handles.membImgDir, handles.nucImgDir, handles.embRegStackDir, handles.membSegDir, handles.resXY, handles.resZ );
 catch ME
     delete(h);
-%     e = errordlg(ME.message);
+    h = errordlg([ME.identifier, newline, ME.message]);
     rethrow(ME)
 end
 delete(h);
