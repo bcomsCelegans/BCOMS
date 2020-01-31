@@ -37,7 +37,7 @@ end
     
 % for i=1:size(preFilenameArr, 1)
 % for i=1
-filename=[preDir, '\', preFilenameArr(i,:)];
+filename=[preDir, filesep, preFilenameArr(i,:)];
 stack=load(filename);
 try
     stack=stack.stack;

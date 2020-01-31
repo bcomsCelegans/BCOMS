@@ -1,21 +1,21 @@
 function h = waterMembrane( membImgDir, nucValDir, embRegDir, membSegDir, resXY, resZ, h )
 
 % Temp
-waterStackTempDir = [membSegDir, '\SegmentationTemp'];
+waterStackTempDir = [membSegDir, filesep, 'SegmentationTemp'];
 mkdir(waterStackTempDir);
-waterScoreTempDir = [membSegDir, '\ScoreTemp'];
+waterScoreTempDir = [membSegDir, filesep, 'ScoreTemp'];
 mkdir(waterScoreTempDir);
 
 % ç≈ìKâ
-waterStackDir = [membSegDir, '\Cell'];
+waterStackDir = [membSegDir, filesep, 'Cell'];
 mkdir(waterStackDir);
-waterLabelDir = [membSegDir, '\CellLabel'];
+waterLabelDir = [membSegDir, filesep, 'CellLabel'];
 mkdir(waterLabelDir);
-waterMembDir = [membSegDir, '\Membrane'];
+waterMembDir = [membSegDir, filesep, 'Membrane'];
 mkdir(waterMembDir);
-matStackDir = [membSegDir, '\MatFile'];
+matStackDir = [membSegDir, filesep, 'MatFile'];
 mkdir(matStackDir);
-% waterScoreDir = [membSegDir, '\Score'];
+% waterScoreDir = [membSegDir, filesep, 'Score'];
 % mkdir(waterScoreDir);
 
 % waitbar
@@ -139,9 +139,9 @@ parfor si = 1:length(filtSize)
 %         score =  [(1:tNum)', repmat(sz, [length(membOverSN) 1]), repmat(alpha, [length(membOverSN) 1]), membOverSN', missedNum' volRatioAtTime'];
 
         % ï€ë∂
-        filename = [waterStackTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
+        filename = [waterStackTempDir, filesep, 'FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
         parsaveStack(filename, stack);
-        filename = [waterScoreTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
+        filename = [waterScoreTempDir, filesep, 'FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
         parsaveScore(filename, score);
     end
 end
@@ -154,7 +154,7 @@ score = [];
 for sz=filtSize
     for a=1:length(alphas)
         alpha=alphas(a);
-        filename = [waterScoreTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
+        filename = [waterScoreTempDir, filesep, 'FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
         thisScore = oneStackLoad(filename);
 %         thisScore = thisScore(4,:);
         fs = thisScore(1,2);
@@ -171,7 +171,7 @@ end
 % for sz=filtSize
 %     for a=1:length(alphas)
 %         alpha=alphas(a);
-%         filename = [waterStackTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
+%         filename = [waterStackTempDir, filesep, 'FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
 %         thisStack = oneStackLoad(filename);
 %         stack = cat(3, stack, thisStack(:,:,9,2));
 % %         stack = cat(3, stack, thisStack(:,:,20,4));
@@ -183,7 +183,7 @@ end
 % for sz=filtSize
 %     for a=1:length(alphas)
 %         alpha=alphas(a);
-%         filename = [waterStackTempDir, '\FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
+%         filename = [waterStackTempDir, filesep, 'FiltSize', num2str(sz), '_Alpha', num2str(alpha), '.mat'];
 %         thisStack = oneStackLoad(filename);
 %         thisStack = thisStack(:,:,9,2);
 %         thisMemb = logical(immultiply(oriEmbReg(:,:,9,2), ~logical(thisStack)));
@@ -207,7 +207,7 @@ minSz = score(end,1);
 minAlpha = score(end,2);
 
 % Load
-filename = [waterStackTempDir, '\FiltSize', num2str(minSz), '_Alpha', num2str(minAlpha), '.mat'];
+filename = [waterStackTempDir, filesep, 'FiltSize', num2str(minSz), '_Alpha', num2str(minAlpha), '.mat'];
 stack = oneStackLoad(filename);
 
 rmdir(waterStackTempDir, 's');
@@ -224,12 +224,12 @@ waitbar(0.9, h);
 stackWrite(stack, waterLabelDir);
 stackWrite(logical(stack), waterStackDir);
 
-filename = [matStackDir, '\cell.mat'];
+filename = [matStackDir, filesep, 'cell.mat'];
 parsaveStack(filename, stack)
 
 % stackWrite(memb, waterMembDir);
 
-% saveName=[waterScoreDir,'\score.mat'];
+% saveName=[waterScoreDir,filesep, 'score.mat'];
 % parsaveScore(saveName, score);
 
 % % with Membrane

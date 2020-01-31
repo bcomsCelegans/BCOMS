@@ -2,9 +2,9 @@ function h = embryonicRegion(membImg, nucValDir, embRegDir, volRatioThresh, h)
 
 mkdir(embRegDir);
 
-embRegStackTempDir=[embRegDir, '\StackTemp'];
+embRegStackTempDir=[embRegDir, filesep, 'StackTemp'];
 mkdir(embRegStackTempDir);
-embRegStackDir=[embRegDir, '\Stack'];
+embRegStackDir=[embRegDir, filesep, 'Stack'];
 mkdir(embRegStackDir);
 
 % Membrane
@@ -57,7 +57,7 @@ end
 iniReg = repmat(mask, [1 1 1 tNum]);
 
 if isnan(volRatioThresh)
-    filename = [embRegStackDir, '\embrayonicRegion.mat'];
+    filename = [embRegStackDir, filesep, 'embrayonicRegion.mat'];
     parsaveStack(filename, iniReg);
     return
 end
@@ -179,7 +179,7 @@ for t=1:tNum
                     % Score
                     tempScore(i, :) = [t ca cb rf er overVal vol nucCoveredFlag];
                     % save
-                    filename = [embRegStackTempDir, '\T', num2str(t), 'CA', num2str(ca), 'CB', num2str(cb), 'RF', num2str(rf), 'ER', num2str(er), '.mat'];
+                    filename = [embRegStackTempDir, filesep, 'T', num2str(t), 'CA', num2str(ca), 'CB', num2str(cb), 'RF', num2str(rf), 'ER', num2str(er), '.mat'];
                     parsaveStack(filename, membReg);
                 end
             end
@@ -226,7 +226,7 @@ optEr=meanScore(1,5);
 
 embOpt = zeros(r,c,zNum, tNum);
 for t = 1:tNum
-    filename = [embRegStackTempDir, '\T', num2str(t), 'CA', num2str(caOpt), 'CB', num2str(cbOpt), 'RF', num2str(rfOpt), 'ER', num2str(optEr), '.mat'];
+    filename = [embRegStackTempDir, filesep, 'T', num2str(t), 'CA', num2str(caOpt), 'CB', num2str(cbOpt), 'RF', num2str(rfOpt), 'ER', num2str(optEr), '.mat'];
     embOpt(:,:,:,t) = oneStackLoad(filename);
 end
 
@@ -235,7 +235,7 @@ end
 waitbar(0.9, h);
 
 % save
-filename = [embRegStackDir, '\embrayonicRegion.mat'];
+filename = [embRegStackDir, filesep, 'embrayonicRegion.mat'];
 parsaveStack(filename, embOpt);
 
 rmdir(embRegStackTempDir, 's')

@@ -1,4 +1,4 @@
-function embryonicRegion(membImg, nucValDir, embRegDir, volRatioThresh)
+function embryonicRegionOriginal(membImg, nucValDir, embRegDir, volRatioThresh)
 
 mkdir(embRegDir);
 
