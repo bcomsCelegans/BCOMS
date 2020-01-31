@@ -56,11 +56,11 @@ end
 
 iniReg = repmat(mask, [1 1 1 tNum]);
 
-% if isnan(volRatioThresh)
-%     filename = [embRegStackDir, '\embrayonicRegion.mat'];
-%     parsaveStack(filename, iniReg);
-%     return
-% end
+if isnan(volRatioThresh)
+    filename = [embRegStackDir, '\embrayonicRegion.mat'];
+    parsaveStack(filename, iniReg);
+    return
+end
 
 % Normalize for score calculation
 membNorm = reshape(memb, [r, c, zNum*tNum]);
